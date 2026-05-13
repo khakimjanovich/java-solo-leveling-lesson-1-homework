@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:java_core_homework_test;MODE=PostgreSQL;DATABASE_TO_UPPER=false
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    defer-datasource-initialization: true
+    open-in-view: false
+  sql:
+    init:
+      mode: always
+

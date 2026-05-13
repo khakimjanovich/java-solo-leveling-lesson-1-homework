@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: java-core-homework-postgres
+    environment:
+      POSTGRES_DB: java_core_homework
+      POSTGRES_USER: homework
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5435:5432"
+    volumes:
+      - java_core_homework_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U homework -d java_core_homework"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  java_core_homework_pgdata:
+
