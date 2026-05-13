@@ -1,15 +1,15 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:java_core_homework_test;MODE=PostgreSQL;DATABASE_TO_UPPER=false
+    url: jdbc:h2:mem:java_core_homework_test;MODE=PostgreSQL
     username: sa
     password:
     driver-class-name: org.h2.Driver
   jpa:
     hibernate:
-      ddl-auto: create-drop
-    defer-datasource-initialization: true
+      ddl-auto: validate
     open-in-view: false
+  flyway:
+    enabled: true
   sql:
     init:
-      mode: always
-
+      mode: never

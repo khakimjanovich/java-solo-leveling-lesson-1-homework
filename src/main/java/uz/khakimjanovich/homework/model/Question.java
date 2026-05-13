@@ -21,33 +21,33 @@ public class Question {
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "topic", nullable = false)
     private Topic topic;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "difficulty", nullable = false)
     private Difficulty difficulty;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "type", nullable = false)
     private QuestionType type;
 
-    @Column(nullable = false, length = 1000)
+    @Column(name = "question_text", nullable = false, length = 1000)
     private String questionText;
 
-    @Column(length = 500)
+    @Column(name = "option_a", length = 500)
     private String optionA;
 
-    @Column(length = 500)
+    @Column(name = "option_b", length = 500)
     private String optionB;
 
-    @Column(length = 500)
+    @Column(name = "option_c", length = 500)
     private String optionC;
 
-    @Column(nullable = false)
+    @Column(name = "correct_answer", nullable = false)
     private String correctAnswer;
 
-    @Column(nullable = false, length = 1000)
+    @Column(name = "explanation", nullable = false, length = 1000)
     private String explanation;
 
     protected Question() {

@@ -47,6 +47,23 @@ password: secret
 
 Runtime data is stored in PostgreSQL. Users and quiz attempts survive API restarts because the app uses schema update mode for the local homework database.
 
+Database schema is managed with Flyway migrations:
+
+```text
+src/main/resources/db/migration/
+├── V1__create_user_accounts.sql
+├── V2__create_questions.sql
+├── V3__create_quiz_attempts.sql
+└── V4__seed_java_core_questions.sql
+```
+
+Hibernate validates the schema instead of creating it. If your local PostgreSQL database was created before Flyway was introduced, reset the local Docker volume once:
+
+```bash
+docker compose down -v
+./run-api.sh
+```
+
 ## Register User From CLI
 
 Interactive mode:

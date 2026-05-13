@@ -6,6 +6,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
@@ -20,18 +21,20 @@ public class QuizAttempt {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_account_id", nullable = false)
     private UserAccount userAccount;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "question_id", nullable = false)
     private Question question;
 
-    @Column(nullable = false)
+    @Column(name = "given_answer", nullable = false)
     private String givenAnswer;
 
-    @Column(nullable = false)
+    @Column(name = "correct", nullable = false)
     private boolean correct;
 
-    @Column(nullable = false)
+    @Column(name = "answered_at", nullable = false)
     private Instant answeredAt = Instant.now();
 
     protected QuizAttempt() {
@@ -56,4 +59,3 @@ public class QuizAttempt {
         return answeredAt;
     }
 }
-
