@@ -78,14 +78,21 @@ final class HomeworkApiClient {
     }
 
     private JsonNode parseResponse(HttpResponse<String> response) throws Exception {
+        JsonNode body = JSON.readTree(response.body());
         if (response.statusCode() >= 400) {
-            throw new IllegalStateException("API failed with status " + response.statusCode() + ": " + response.body());
+            String message = body.hasNonNull("message") ? body.get("message").asText() : response.body();
+            String detail = body.has("data") && body.get("data").hasNonNull("detail")
+                    ? ": " + body.get("data").get("detail").asText()
+                    : "";
+            throw new IllegalStateException("API failed with status " + response.statusCode() + ": " + message + detail);
         }
-        return JSON.readTree(response.body());
+        if (body.has("data")) {
+            return body.get("data");
+        }
+        return body;
     }
 
     private String encode(String value) {
         return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 }
-

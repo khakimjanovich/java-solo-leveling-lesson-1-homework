@@ -1,0 +1,12 @@
+target/
+
+.idea/
+*.iml
+
+.DS_Store
+.nvimlog
+
+*.log
+*.tmp
+
+docker-data/

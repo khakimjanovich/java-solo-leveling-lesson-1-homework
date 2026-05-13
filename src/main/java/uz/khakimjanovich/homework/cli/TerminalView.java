@@ -2,6 +2,8 @@ package uz.khakimjanovich.homework.cli;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.Scanner;
 
 import static uz.khakimjanovich.homework.cli.CliColors.BOLD;
@@ -14,6 +16,24 @@ import static uz.khakimjanovich.homework.cli.CliColors.YELLOW;
 
 final class TerminalView {
 
+    private static final int MIN_FRAME_INNER_WIDTH = 58;
+    private static final int MAX_FRAME_INNER_WIDTH = 110;
+    private static final int TERMINAL_MARGIN = 4;
+
+    private static final String[][] TOPIC_OPTIONS = {
+            {"JAVA_CORE", "Java Core"},
+            {"OOP", "OOP"},
+            {"COLLECTIONS", "Collections"},
+            {"EXCEPTIONS", "Exceptions"},
+            {"MAVEN", "Maven"}
+    };
+
+    private static final String[][] DIFFICULTY_OPTIONS = {
+            {"EASY", "Easy"},
+            {"MEDIUM", "Medium"},
+            {"HARD", "Hard"}
+    };
+
     String prompt(Scanner scanner, String label, String defaultValue) {
         String suffix = defaultValue.isBlank() ? "" : " [" + defaultValue + "]";
         System.out.print(CYAN + label + suffix + ": " + RESET);
@@ -21,66 +41,54 @@ final class TerminalView {
         return value.isBlank() ? defaultValue : value;
     }
 
-    String chooseTopic(Scanner scanner) {
-        System.out.println("""
-                Topic
-                [1] JAVA_CORE      [2] OOP
-                [3] COLLECTIONS    [4] EXCEPTIONS
-                [5] MAVEN
-                """);
-        return switch (prompt(scanner, "Topic key", "1")) {
-            case "2" -> "OOP";
-            case "3" -> "COLLECTIONS";
-            case "4" -> "EXCEPTIONS";
-            case "5" -> "MAVEN";
-            default -> "JAVA_CORE";
-        };
+    String chooseTopic(CliSession session) throws Exception {
+        return selectOption(
+                "Choose Topic",
+                session,
+                "Pick the Java Core area for the next random question.",
+                "w/s move   Enter select   1-5 quick select",
+                TOPIC_OPTIONS
+        );
     }
 
-    String chooseDifficulty(Scanner scanner) {
-        System.out.println("""
-                Difficulty
-                [1] EASY    [2] MEDIUM    [3] HARD
-                """);
-        return switch (prompt(scanner, "Difficulty key", "1")) {
-            case "2" -> "MEDIUM";
-            case "3" -> "HARD";
-            default -> "EASY";
-        };
+    String chooseDifficulty(CliSession session) throws Exception {
+        return selectOption(
+                "Choose Difficulty",
+                session,
+                "Pick how hard this question should be.",
+                "w/s move   Enter select   1-3 quick select",
+                DIFFICULTY_OPTIONS
+        );
     }
 
     void banner() {
-        System.out.println(BOLD + CYAN + """
-                =========================================
-                 Java Core Homework CLI Game
-                =========================================
-                """ + RESET);
+        printBorder(BOLD + CYAN);
+        printCenteredLine("Java Core Homework CLI Game", BOLD + CYAN);
+        printBorder(BOLD + CYAN);
     }
 
-    void printGameScreen(CliSession session, JsonNode currentQuestion) {
-        System.out.printf("%sCurrent user:%s #%d %s (%s)%n%n",
-                CYAN,
-                RESET,
-                session.userId(),
-                session.displayName(),
-                session.username());
-        System.out.println(CYAN + "Attempts:" + RESET + " " + formatStats(session.stats()));
-        System.out.println();
-        if (currentQuestion == null) {
-            System.out.println(DIM + "No active question yet." + RESET);
-        } else {
-            printQuestion(currentQuestion);
+    void printGameScreen(CliSession session, JsonNode currentQuestion, String message) {
+        beginScreen("Current Session", session);
+        if (!message.isBlank()) {
+            printLeftLine(message, YELLOW);
+            printEmptyLine("");
         }
-        System.out.println(BOLD + """
-
-                Controls
-                [n] next question   [a] answer current   [u] switch user   [q] quit
-                """ + RESET);
+        if (currentQuestion == null) {
+            printCenteredLine("No active question yet.", DIM);
+        } else {
+            printQuestionBody(currentQuestion);
+        }
+        printEmptyLine(CYAN);
+        printCenteredLine("Controls", BOLD);
+        printCenteredLine("[n] next   [a] answer   [u] user   [q] quit", BOLD);
+        printBorder(CYAN);
     }
 
     void section(String title) {
         System.out.println();
-        System.out.println(BOLD + YELLOW + "== " + title + " ==" + RESET);
+        printBorder(BOLD + YELLOW);
+        printCenteredLine(title, BOLD + YELLOW);
+        printBorder(BOLD + YELLOW);
     }
 
     int selectUser(JsonNode users, JsonNode[] statsByUser) throws Exception {
@@ -89,15 +97,16 @@ final class TerminalView {
 
         while (true) {
             clearScreen();
-            banner();
-            section("Select User");
-            System.out.println(DIM + "Use w/s or j/k to move, Enter to select, n to create." + RESET);
-            System.out.println();
+            beginScreen("Select User", null);
+            printCenteredLine("Use w/s or j/k to move, Enter to select, n to create.", DIM);
+            printEmptyLine("");
 
             for (int i = 0; i < users.size(); i++) {
                 printUserButton(i, users.get(i), statsByUser[i], i == active);
             }
             printCreateUserButton(active == createNewIndex);
+            printCenteredLine("w/s move   Enter select   n new", BOLD);
+            printBorder(CYAN);
 
             char key = readKey();
             if (key == 'w' || key == 'k') {
@@ -122,48 +131,64 @@ final class TerminalView {
         System.out.flush();
     }
 
-    void printQuestion(JsonNode response) {
-        System.out.printf("""
-                %sQuestion #%s%s
-                %sTopic:%s %s
-                %sDifficulty:%s %s
-                %sType:%s %s
+    void printCreateUserScreen() {
+        clearScreen();
+        beginScreen("Create User", null);
+        printCenteredLine("Create a learner profile for storing attempts.", DIM);
+        printEmptyLine("");
+        printLeftLine("Username: required", "");
+        printLeftLine("Display name: optional, defaults to username", "");
+        printEmptyLine("");
+        printCenteredLine("Complete the prompts below this frame.", BOLD);
+        printBorder(CYAN);
+    }
 
-                %s%s%s
-                """,
-                BOLD,
-                response.get("id").asText(),
-                RESET,
-                CYAN,
-                RESET,
-                response.get("topic").asText(),
-                CYAN,
-                RESET,
-                response.get("difficulty").asText(),
-                CYAN,
-                RESET,
-                response.get("type").asText(),
-                BOLD,
-                response.get("questionText").asText(),
-                RESET);
-        if ("MULTIPLE_CHOICE".equals(response.get("type").asText())) {
-            System.out.printf("""
-                    %sa)%s %s
-                    %sb)%s %s
-                    %sc)%s %s
-                    %n""",
-                    YELLOW,
-                    RESET,
-                    response.get("optionA").asText(),
-                    YELLOW,
-                    RESET,
-                    response.get("optionB").asText(),
-                    YELLOW,
-                    RESET,
-                    response.get("optionC").asText());
+    void printQuestion(JsonNode response) {
+        printBorder(CYAN);
+        printQuestionBody(response);
+        printBorder(CYAN);
+    }
+
+    void printAnswerScreen(CliSession session, JsonNode currentQuestion) {
+        clearScreen();
+        beginScreen("Answer Question", session);
+        if (currentQuestion == null) {
+            printCenteredLine("No active question. Press n first.", YELLOW);
         } else {
-            System.out.println();
+            printQuestionBody(currentQuestion);
+            printEmptyLine("");
+            if ("MULTIPLE_CHOICE".equals(currentQuestion.get("type").asText())) {
+                printCenteredLine("Press answer key: a, b, or c", BOLD);
+            } else {
+                printCenteredLine("Type your open answer below this frame.", BOLD);
+            }
         }
+        printBorder(CYAN);
+    }
+
+    void printAnswerResultScreen(CliSession session, JsonNode question, JsonNode result) {
+        clearScreen();
+        beginScreen("Answer Result", session);
+        boolean correct = result.get("correct").asBoolean();
+        printCenteredLine(correct ? "Correct" : "Wrong", correct ? GREEN : RED);
+        printLeftLine("Attempt: #" + result.get("attemptId").asText(), "");
+        if (question != null) {
+            printLeftLine("Question: #" + question.get("id").asText(), "");
+        }
+        printEmptyLine("");
+        printLeftLine("Explanation: " + result.get("explanation").asText(), YELLOW);
+        printEmptyLine("");
+        printCenteredLine("Press Enter to continue.", BOLD);
+        printBorder(CYAN);
+    }
+
+    void printMessageScreen(String title, CliSession session, String message) {
+        clearScreen();
+        beginScreen(title, session);
+        printCenteredLine(message, YELLOW);
+        printEmptyLine("");
+        printCenteredLine("Press Enter to continue.", BOLD);
+        printBorder(CYAN);
     }
 
     String formatStats(JsonNode stats) {
@@ -188,35 +213,158 @@ final class TerminalView {
         while (true) {
             char key = readKey();
             if (key == 'a' || key == 'b' || key == 'c') {
-                System.out.println(YELLOW + String.valueOf(key) + RESET);
                 return key;
             }
-            System.out.println(RED + "Use a, b, or c." + RESET);
         }
     }
 
     private void printUserButton(int index, JsonNode user, JsonNode stats, boolean active) {
         String color = active ? GREEN : RESET;
         String marker = active ? ">" : " ";
+        int contentWidth = innerWidth() - 4;
         System.out.print(color);
-        System.out.println("+----------------------------------------------------------+");
-        System.out.printf("| %s %d. %-50s |%n", marker, index + 1, trim(user.get("displayName").asText(), 50));
-        System.out.printf("|   @%-53s |%n", trim(user.get("username").asText(), 53));
-        System.out.printf("|   %-56s |%n", trim("Attempts: " + formatStats(stats), 56));
-        System.out.println("+----------------------------------------------------------+");
+        printRawBorder();
+        printRawLeftLine("%s %2d. %s".formatted(marker, index + 1, user.get("displayName").asText()), contentWidth);
+        printRawLeftLine("  @" + user.get("username").asText(), contentWidth);
+        printRawLeftLine("  Attempts: " + formatStats(stats), contentWidth);
+        printRawBorder();
         System.out.print(RESET);
-        System.out.println();
     }
 
     private void printCreateUserButton(boolean active) {
         String color = active ? GREEN : RESET;
         String marker = active ? ">" : " ";
+        int contentWidth = innerWidth() - 4;
         System.out.print(color);
-        System.out.println("+----------------------------------------------------------+");
-        System.out.printf("| %s + %-52s |%n", marker, "Create new user");
-        System.out.println("+----------------------------------------------------------+");
+        printRawBorder();
+        printRawLeftLine(marker + " + Create new user", contentWidth);
+        printRawBorder();
         System.out.print(RESET);
-        System.out.println();
+    }
+
+    private String selectOption(String title, CliSession session, String message, String footer, String[][] options) throws Exception {
+        int active = 0;
+        while (true) {
+            clearScreen();
+            beginScreen(title, session);
+            printCenteredLine(message, DIM);
+            printEmptyLine("");
+            for (int i = 0; i < options.length; i++) {
+                printOptionButton(i, options[i][1], i == active);
+            }
+            printEmptyLine("");
+            printCenteredLine(footer, BOLD);
+            printBorder(CYAN);
+
+            char key = readKey();
+            if (key == 'w' || key == 'k') {
+                active = active == 0 ? options.length - 1 : active - 1;
+            } else if (key == 's' || key == 'j') {
+                active = active == options.length - 1 ? 0 : active + 1;
+            } else if (key == '\n' || key == '\r') {
+                return options[active][0];
+            } else if (Character.isDigit(key)) {
+                int selected = Character.getNumericValue(key) - 1;
+                if (selected >= 0 && selected < options.length) {
+                    return options[selected][0];
+                }
+            }
+        }
+    }
+
+    private void printOptionButton(int index, String label, boolean active) {
+        String color = active ? GREEN : RESET;
+        String marker = active ? ">" : " ";
+        printLeftLine("%s [%d] %s".formatted(marker, index + 1, label), color);
+    }
+
+    private void beginScreen(String title, CliSession session) {
+        banner();
+        printCenteredLine("Screen: " + title, BOLD + YELLOW);
+        if (session != null) {
+            printLeftLine("User: #%d %s (%s)".formatted(session.userId(), session.displayName(), session.username()), "");
+            printLeftLine("Attempts: " + formatStats(session.stats()), "");
+        }
+        printBorder(CYAN);
+    }
+
+    private void printQuestionBody(JsonNode response) {
+        printCenteredLine("Question #" + response.get("id").asText(), BOLD);
+        printLeftLine("Topic: " + response.get("topic").asText(), "");
+        printLeftLine("Difficulty: " + response.get("difficulty").asText(), "");
+        printLeftLine("Type: " + response.get("type").asText(), "");
+        printEmptyLine("");
+        printLeftLine(response.get("questionText").asText(), BOLD);
+        if ("MULTIPLE_CHOICE".equals(response.get("type").asText())) {
+            printEmptyLine("");
+            printLeftLine("a) " + response.get("optionA").asText(), YELLOW);
+            printLeftLine("b) " + response.get("optionB").asText(), YELLOW);
+            printLeftLine("c) " + response.get("optionC").asText(), YELLOW);
+        }
+    }
+
+    private void printBorder(String color) {
+        System.out.println(color + border() + RESET);
+    }
+
+    private void printRawBorder() {
+        System.out.println(border());
+    }
+
+    private void printEmptyLine(String color) {
+        System.out.println(color + "|" + " ".repeat(innerWidth()) + "|" + RESET);
+    }
+
+    private void printCenteredLine(String text, String color) {
+        int width = innerWidth();
+        String value = trim(text, width);
+        int leftPadding = (width - value.length()) / 2;
+        int rightPadding = width - value.length() - leftPadding;
+        System.out.println(color + "|" + " ".repeat(leftPadding) + value + " ".repeat(rightPadding) + "|" + RESET);
+    }
+
+    private void printLeftLine(String text, String color) {
+        int contentWidth = innerWidth() - 4;
+        String value = trim(text, contentWidth);
+        System.out.printf("%s|  %-" + contentWidth + "s  |%s%n", color, value, RESET);
+    }
+
+    private void printRawLeftLine(String text, int contentWidth) {
+        String value = trim(text, contentWidth);
+        System.out.printf("|  %-" + contentWidth + "s  |%n", value);
+    }
+
+    private String border() {
+        return "+" + "-".repeat(innerWidth()) + "+";
+    }
+
+    private int innerWidth() {
+        int terminalColumns = terminalColumns();
+        int available = Math.max(MIN_FRAME_INNER_WIDTH, terminalColumns - TERMINAL_MARGIN - 2);
+        return Math.min(MAX_FRAME_INNER_WIDTH, available);
+    }
+
+    private int terminalColumns() {
+        String columns = System.getenv("COLUMNS");
+        if (columns != null && !columns.isBlank()) {
+            try {
+                return Integer.parseInt(columns);
+            } catch (NumberFormatException ignored) {
+                // Fall through to tput.
+            }
+        }
+        try {
+            Process process = new ProcessBuilder("sh", "-c", "tput cols 2>/dev/null").start();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String value = reader.readLine();
+                if (process.waitFor() == 0 && value != null && !value.isBlank()) {
+                    return Integer.parseInt(value.trim());
+                }
+            }
+        } catch (Exception ignored) {
+            // Non-interactive shells may not expose terminal dimensions.
+        }
+        return MIN_FRAME_INNER_WIDTH + TERMINAL_MARGIN + 2;
     }
 
     private String trim(String value, int maxLength) {

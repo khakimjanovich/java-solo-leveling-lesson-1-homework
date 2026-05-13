@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import uz.khakimjanovich.homework.http.request.RegisterUserRequest;
+import uz.khakimjanovich.homework.http.response.ApiResponse;
+import uz.khakimjanovich.homework.http.response.ApiResponseMapper;
 import uz.khakimjanovich.homework.http.response.UserResponse;
 import uz.khakimjanovich.homework.http.response.UserStatsResponse;
 import uz.khakimjanovich.homework.service.HomeworkService;
@@ -21,31 +23,33 @@ import java.util.List;
 public class UserController {
 
     private final HomeworkService service;
+    private final ApiResponseMapper responses;
 
-    public UserController(HomeworkService service) {
+    public UserController(HomeworkService service, ApiResponseMapper responses) {
         this.service = service;
+        this.responses = responses;
     }
 
     @GetMapping
-    List<UserResponse> users() {
-        return service.users().stream()
+    ApiResponse<List<UserResponse>> users() {
+        return responses.success(service.users().stream()
                 .map(UserResponse::from)
-                .toList();
+                .toList());
     }
 
     @GetMapping("/{id}/stats")
-    UserStatsResponse stats(@PathVariable Long id) {
-        return service.stats(id);
+    ApiResponse<UserStatsResponse> stats(@PathVariable Long id) {
+        return responses.success(service.stats(id));
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    UserResponse register(@Valid @RequestBody RegisterUserRequest request) {
-        return UserResponse.from(service.register(request));
+    ApiResponse<UserResponse> register(@Valid @RequestBody RegisterUserRequest request) {
+        return responses.success(UserResponse.from(service.register(request)));
     }
 
     @PostMapping("/session")
-    UserResponse session(@Valid @RequestBody RegisterUserRequest request) {
-        return UserResponse.from(service.session(request));
+    ApiResponse<UserResponse> session(@Valid @RequestBody RegisterUserRequest request) {
+        return responses.success(UserResponse.from(service.session(request)));
     }
 }

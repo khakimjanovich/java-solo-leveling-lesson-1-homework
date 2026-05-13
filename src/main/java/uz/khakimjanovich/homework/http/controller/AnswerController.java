@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import uz.khakimjanovich.homework.http.request.SubmitAnswerRequest;
 import uz.khakimjanovich.homework.http.response.AnswerResultResponse;
+import uz.khakimjanovich.homework.http.response.ApiResponse;
+import uz.khakimjanovich.homework.http.response.ApiResponseMapper;
 import uz.khakimjanovich.homework.service.HomeworkService;
 
 @RestController
@@ -14,14 +16,15 @@ import uz.khakimjanovich.homework.service.HomeworkService;
 public class AnswerController {
 
     private final HomeworkService service;
+    private final ApiResponseMapper responses;
 
-    public AnswerController(HomeworkService service) {
+    public AnswerController(HomeworkService service, ApiResponseMapper responses) {
         this.service = service;
+        this.responses = responses;
     }
 
     @PostMapping
-    AnswerResultResponse answer(@Valid @RequestBody SubmitAnswerRequest request) {
-        return service.answer(request);
+    ApiResponse<AnswerResultResponse> answer(@Valid @RequestBody SubmitAnswerRequest request) {
+        return responses.success(service.answer(request));
     }
 }
-

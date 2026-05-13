@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import uz.khakimjanovich.homework.http.request.CreateQuestionRequest;
+import uz.khakimjanovich.homework.http.response.ApiResponse;
+import uz.khakimjanovich.homework.http.response.ApiResponseMapper;
 import uz.khakimjanovich.homework.http.response.QuestionResponse;
 import uz.khakimjanovich.homework.enums.Difficulty;
 import uz.khakimjanovich.homework.enums.Topic;
@@ -20,19 +22,21 @@ import uz.khakimjanovich.homework.service.HomeworkService;
 public class QuestionController {
 
     private final HomeworkService service;
+    private final ApiResponseMapper responses;
 
-    public QuestionController(HomeworkService service) {
+    public QuestionController(HomeworkService service, ApiResponseMapper responses) {
         this.service = service;
+        this.responses = responses;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    QuestionResponse create(@Valid @RequestBody CreateQuestionRequest request) {
-        return QuestionResponse.from(service.createQuestion(request));
+    ApiResponse<QuestionResponse> create(@Valid @RequestBody CreateQuestionRequest request) {
+        return responses.success(QuestionResponse.from(service.createQuestion(request)));
     }
 
     @GetMapping("/random")
-    QuestionResponse random(@RequestParam Topic topic, @RequestParam Difficulty difficulty) {
-        return QuestionResponse.from(service.randomQuestion(topic, difficulty));
+    ApiResponse<QuestionResponse> random(@RequestParam Topic topic, @RequestParam Difficulty difficulty) {
+        return responses.success(QuestionResponse.from(service.randomQuestion(topic, difficulty)));
     }
 }

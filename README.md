@@ -129,6 +129,18 @@ GET  /api/questions/random?topic=JAVA_CORE&difficulty=EASY
 POST /api/answers
 ```
 
+Successful API responses use a common response envelope:
+
+```json
+{
+  "status": 0,
+  "message": "Success",
+  "data": {}
+}
+```
+
+Error responses use the same shape with a non-zero business status code. Messages are translated through Spring `MessageSource`; pass `Accept-Language: en`, `Accept-Language: uz`, or `Accept-Language: ru`.
+
 ## Question Types
 
 - `MULTIPLE_CHOICE`: has options `a`, `b`, and `c`; the correct answer is one of those letters.
